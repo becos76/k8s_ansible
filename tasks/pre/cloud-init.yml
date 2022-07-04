@@ -1,0 +1,14 @@
+---
+- name: CHECK FOR CLOUD-INIT
+  stat: 
+    path: /etc/cloud/
+  register: cloud
+  
+- name: DISABLE CLOUD-INIT
+  file:
+    path: /etc/cloud/cloud-init.disabled
+    state: touch
+    access_time: preserve
+    modification_time: preserve
+  become: yes
+  when: cloud.stat.exists

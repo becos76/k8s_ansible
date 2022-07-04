@@ -1,0 +1,5 @@
+---
+- name: INSTALL FLANNEL
+  shell: kubectl apply -f https://github.com/coreos/flannel/raw/master/Documentation/kube-flannel.yml
+  delay: 20
+

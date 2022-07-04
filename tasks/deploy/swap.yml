@@ -1,0 +1,20 @@
+---
+- name: CHECK SWAP
+  command: swapon -s
+  register: swap
+  
+- name: DISABLING SWAP
+  block:
+    - name: COMMENT OUT FSTAB
+      replace:
+        dest: /etc/fstab
+        regexp: "^{{ item.split(' ')|first }}"
+        replace: "#{{ item.split(' ')|first }}"
+      loop: "{{swap.stdout_lines[1:]}}"
+    
+    - name: TURN OFF SWAP
+      command: swapoff -a
+  
+  when: swap.stdout_lines
+  become: yes
+  

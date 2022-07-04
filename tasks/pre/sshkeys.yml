@@ -1,0 +1,13 @@
+---
+- name: GENERATE LOCAL KEY IF NOT THERE
+  openssh_keypair:
+    path: ~/.ssh/id_ansible
+    type: rsa
+  delegate_to: localhost
+  run_once: true
+
+- name: DISTRIBUTE SSH KEY TO NODES
+  authorized_key:
+    user: "{{ ansible_env.USER }}"
+    state: present
+    key: "{{ lookup('file', '~/.ssh/id_ansible.pub') }}"

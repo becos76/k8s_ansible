@@ -1,0 +1,15 @@
+---
+- name: INSTALL KUBE PACKAGES
+  apt:
+    update-cache: yes
+    autoremove: yes
+    name:
+      - kubeadm={{k8s_version}}-00
+      - kubectl={{k8s_version}}-00
+      - kubelet={{k8s_version}}-00
+    
+- name: ENABLE/START KUBELET SERVICE IF NOT ALREADY
+  systemd:
+    name: kubelet
+    enabled: yes
+    state: started

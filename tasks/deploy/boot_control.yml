@@ -1,0 +1,30 @@
+---
+- name: DOWNLOAD KUBERNETES PACKAGES
+  shell: kubeadm config images pull --kubernetes-version={{ k8s_version }}
+  delay: 20
+
+- name: INIT CONTROL NODE
+  shell: kubeadm init --pod-network-cidr={{ k8s_pod_cidr }} --kubernetes-version={{ k8s_version }}
+  register: k8s_init
+  until: k8s_init.stdout.find("initialized successfully!")
+  retries: 2
+  delay: 20
+  become: yes
+
+- name: CONFIGURE KUBECTL
+  block:
+    - name: CREATE .kube DIRECTORY
+      file:
+        path: $HOME/.kube
+        state: directory
+        mode: 0755
+    
+    - name: COPY CONFIG
+      copy:
+        src: /etc/kubernetes/admin.conf
+        dest: .kube/config
+        remote_src: yes
+        owner: "{{ ansible_env.USER }}"
+        group: "{{ ansible_env.USER }}"
+      become: yes
+  #when: k8s_init.rc == 0

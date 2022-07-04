@@ -1,0 +1,180 @@
+#!/usr/bin/env ansible-playbook
+---
+- name: "<! ################# CHECKING ENVIRONMENT ################# !>"
+  hosts: localhost
+  gather_facts: no
+  
+  
+  
+  tasks:
+     
+  - name: INVENTORY CHECK - DHCP HOSTS
+    debug: 
+      msg: "dhcp_hosts group is not populated" 
+    when: not groups.dhcp_hosts
+    failed_when: not groups.dhcp_hosts
+
+  - name: INVENTORY CHECK - WORKERS 
+    debug: 
+      msg: "workers group is not populated" 
+    when: not groups.workers
+    failed_when: not groups.workers
+  
+  - name: INVENTORY CHECK - SINGLE CONTROL NODE
+    debug: 
+      msg: "control group is not correctly populated for a single (1) control node" 
+    when: (not groups.control) or (groups.control|length > 1)
+    failed_when: (not groups.control) or (groups.control|length > 1)
+  
+  - name: CHECK QUANTITIES
+    assert:
+      that: groups.dhcp_hosts|length == (groups.control+groups.workers)|length
+      quiet: yes
+      fail_msg: "Number of DHCP hosts cannot be different of number of K8s nodes"
+
+  - name: CHECK NODE DEFINITIONS
+    assert:
+      that: 
+        - hostvars[item].ansible_host is defined
+        - hostvars[item].inventory_hostname is defined
+        - hostvars[item].ansible_user is defined
+      quiet: yes
+      fail_msg: "Make sure k8s nodes are defined as <hostname> ansible_host=<ip-address> and ansible_user is set either in all or per node"
+      success_msg: "Looks Good!"
+    loop: "{{groups.workers+groups.control}}"
+  
+  - name: CHECK INVENTORY VARIABLES 
+    assert:
+      that: 
+        - k8s_pod_cidr is defined and k8s_pod_cidr
+        - k8s_version is defined and k8s_version
+        - ansible_ssh_private_key_file is defined and ansible_ssh_private_key_file
+        - ansible_user is defined and ansible_user
+      quiet: yes
+      fail_msg: "Make sure all inventory variables are defined"
+      success_msg: "Looks Good!"
+  
+  - name: CHECK FOR PASSWORD FILE
+    stat:
+      path: "{{ lookup('ansible.builtin.env', 'PWD') }}/.secrets/passwd.yml"
+    register: passwords
+
+  - debug: msg="Password file is not found"
+    when: not passwords.stat.exists
+    failed_when: not passwords.stat.exists
+  
+  - name: CHECKING SECRETS
+    include_vars:
+      dir: "{{ lookup('ansible.builtin.env', 'PWD') }}/.secrets/"
+      files_matching: passwd.yml
+  
+  - name: SECRET VARIABLES
+    assert:
+      that: 
+        - ansible_sudo_pass is defined and ansible_sudo_pass
+        - ansible_become_pass is defined and ansible_become_pass
+        - ansible_ssh_pass is defined and ansible_ssh_pass
+      quiet: yes
+      fail_msg: "Make sure all secrets variables are defined"
+      success_msg: "Looks Good!"
+  
+
+  - name: CHECK FOR NETPLAN VARIABLES FILE
+    stat:
+      path: "{{ lookup('ansible.builtin.env', 'PWD') }}/vars/netplan.yml"
+    register: netplan_file
+
+  - debug: msg="Netplan variables file is not found"
+    when: not netplan_file.stat.exists
+    failed_when: not netplan_file.stat.exists
+  
+
+  - name: INCLUDING NETPLAN VARIABLES
+    include_vars:
+      dir: "{{ lookup('ansible.builtin.env', 'PWD') }}/vars"
+      files_matching: netplan.yml
+  
+  
+
+  - name: CHECKING NETPLAN VARIABLES
+    assert:
+      that: 
+        - netplan is defined and netplan
+        - netplan.gateway4 is defined and netplan.gateway4
+        - netplan.subnet is defined and netplan.subnet|int > 0 and netplan.subnet <= 31
+        - netplan.dns is defined and netplan.dns
+      quiet: yes
+      fail_msg: "Make sure all netplan variables are defined correctly"
+      success_msg: "Looks Good!"
+
+  - name: CHECK CONFIGS DIRECTORY
+    file:
+      path: "{{ lookup('ansible.builtin.env', 'PWD') }}/configs"
+      state: directory
+    register: configs
+
+  - debug: msg="Directory for netplan configs created"
+    when: configs.changed
+
+#  - name: PINGING DHCP HOSTS - SHOULD BE ALIVE
+#    command: "ping -4 -c 2 {{ item }}"
+#    loop: "{{groups.dhcp_hosts}}" 
+#    register: result
+#    failed_when: result.rc != 0
+#    changed_when: result.rc != 0
+#    
+#  - name: PINGING K8S HOSTS - SHOULD *NOT* BE ALIVE
+#    command: "ping -4 -c 2 {{ hostvars[item].ansible_host }}"
+#    loop: "{{groups.control+groups.workers}}" 
+#    register: result
+#    failed_when: result.rc == 0
+#    changed_when: result.rc == 0
+    
+  
+  - name: CHECK SSH CONNECTIVITY TO DHCP HOSTS
+    wait_for:
+      port: 22
+      host: "{{item}}"
+      search_regex: OpenSSH
+      delay: 0
+      timeout: 2
+    loop: "{{groups.dhcp_hosts}}"
+
+  - name: CHECK SSH CONNECTIVITY TO K8S NODES
+    wait_for:
+      port: 22
+      host: "{{hostvars[item].ansible_host}}"
+      search_regex: OpenSSH
+      delay: 0
+      timeout: 2
+      msg: Should not be alive
+      state: stopped
+    loop: "{{groups.control+groups.workers}}"
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

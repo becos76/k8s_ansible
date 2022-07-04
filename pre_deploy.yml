@@ -1,0 +1,32 @@
+#!/usr/bin/env ansible-playbook
+---
+- name: "<! ################# PRE :: PERFORM PRE-DEPLOYMENT TASKS ################### !>"
+  hosts: all:!dhcp_hosts
+  gather_facts: yes
+  #any_errors_fatal: no
+  vars_files:
+    - .secrets/passwd.yml
+
+  tasks:
+  - name: "<======================== SSH KEYS ========================>"
+    include_tasks: tasks/pre/sshkeys.yml
+  
+  - name: "<======================== SUDO ============================>"
+    include_tasks: tasks/pre/sudo.yml
+  
+  - name: "<======================== CLOUD-INIT ======================>"
+    include_tasks: tasks/pre/cloud-init.yml
+  
+  - name: "<======================== HOSTNAMES =======================>"
+    include_tasks: tasks/pre/hostname.yml
+  
+  - name: "<======================== HOSTS FILES =====================>"
+    include_tasks: tasks/pre/hosts.yml
+  
+  - name: "<======================== UPDATE/UPGRADE ==================>"
+    include_tasks: tasks/pre/upgrade.yml
+    
+  - name: "<======================== REBOOT ========================->"
+    include_tasks: tasks/pre/reboot.yml  
+
+  - debug: msg="\u2705 NODE READY FOR DEPLOYMENT"

@@ -1,0 +1,30 @@
+---
+- name: INSTALL PRE-REQUISITE PACKAGES
+  apt:
+    update-cache: yes
+    autoremove: yes
+    name:
+      - vim
+      - git
+      - curl
+      - wget
+      - apt-transport-https
+      - ca-certificates
+  
+  
+- name: ADD GOOGLEs KEY
+  apt_key:
+    url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
+    state: present
+  
+- name: ADD K8S REPO  
+  apt_repository:
+    repo: deb https://apt.kubernetes.io/ kubernetes-xenial main
+    state: present
+    filename: kubernetes
+  
+- name: APT UPDATE
+  apt:
+   update-cache: yes
+   autoremove: yes
+  

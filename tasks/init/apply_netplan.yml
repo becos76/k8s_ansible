@@ -1,0 +1,39 @@
+#!/usr/bin/env ansible-playbook
+---
+- name: "<! ################# INIT :: CHANGE TO STATIC IPs ################### !>"
+  hosts: dhcp_hosts
+  gather_facts: yes
+  vars_files:
+    - "{{inventory_dir}}/.secrets/passwd.yml"
+
+
+  tasks:
+
+  - name: GET NETPLAN FILENAME
+    shell: ls /etc/netplan
+    register: netplan_file
+ 
+  - name: UPLOAD NETPLAN CONFIGS
+    copy:
+      content: "{{lookup('file', '{{inventory_dir}}/configs/netplan.{{ansible_host}}')}}\n"
+      dest: "/etc/netplan/{{netplan_file.stdout}}"
+    become: yes
+
+  - name: APPLY NETPLAN SETTINGS
+    command: netplan apply
+    become: yes
+    async: 10
+    poll: 0
+    #ignore_errors: true
+  
+  - name: CHECK CONNECTIVITY TO STATIC IPs
+    wait_for:
+      port: 22
+      host: "{{hostvars[item].ansible_host}}"
+      search_regex: OpenSSH
+      delay: 20
+      timeout: 120
+    loop: "{{groups.control+groups.workers}}"
+    connection: local
+    run_once: yes
+    #delegate_to: localhost

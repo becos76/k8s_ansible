@@ -1,0 +1,6 @@
+---
+- name: UPDATE & FULL-UPGRADE IF NEEDED
+  apt:
+    update_cache: yes
+    upgrade: full
+  become: yes

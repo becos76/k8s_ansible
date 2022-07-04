@@ -1,0 +1,6 @@
+---
+- name: SET HOSTNAMES
+  hostname:
+    name: "{{ inventory_hostname }}"
+  when: ansible_hostname != inventory_hostname
+  become: yes

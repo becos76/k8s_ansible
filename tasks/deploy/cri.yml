@@ -1,0 +1,36 @@
+---
+- name: INSTALL DOCKER
+  apt:
+    update-cache: yes
+    autoremove: yes
+    name: docker.io
+  
+- name: ADD USER TO DOCKER GROUP
+  user:
+    name: "{{ ansible_env.USER }}"
+    groups: docker
+    append: yes
+
+- name: SET CGROUP to SYSTEMD
+  copy:
+    content: |
+      {
+        "exec-opts": ["native.cgroupdriver=systemd"],
+        "log-driver": "json-file",
+        "log-opts": {
+        "max-size": "100m"
+         },
+        "storage-driver": "overlay2"
+      }
+    dest: /etc/docker/daemon.json
+
+- name: RESTART DOCKER
+  systemd:
+    daemon_reload: yes
+    enabled: yes
+    name: docker
+    state: restarted
+
+- name: BUMP SSH CONNECTIONS
+  meta:
+    reset_connection  

@@ -1,0 +1,11 @@
+network:
+    ethernets:
+        {{ item.intf }}:
+          dhcp4: false
+          dhcp6: false
+          addresses: [{{ item.newIP }}/{{ netplan.subnet }}]
+          gateway4: {{ netplan.gateway4 }}
+          nameservers:
+             addresses: [{% for dns in netplan.dns %}{{dns}}{%- if not loop.last %}, {% endif %}{% endfor %}]
+    version: 2
+

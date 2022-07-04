@@ -1,0 +1,20 @@
+#!/usr/bin/env ansible-playbook
+---
+- name: ONE PLAY TO CONTROL ALL
+  hosts: all
+  gather_facts: no
+
+- name: "<! ################# CHECK :: PRE-FLIGHT CHECKING ################### !>"
+  import_playbook: checks.yml
+
+- name: "<! ################# INIT :: PREPARE FOR STATIC IPs ################# !>"
+  import_playbook: init_play.yml
+  
+- name: "<! ################# INIT :: CHANGE TO STATIC IPs ################### !>"
+  import_playbook: tasks/init/apply_netplan.yml
+
+- name: "<! ################# PRE :: PERFORM PRE-DEPLOYMENT TASKS ############ !>"
+  import_playbook: pre_deploy.yml
+
+- name: "<! ################# DEPLOY :: PERFORM DEPLOYMENT TASKS ############# !>"
+  import_playbook: deployment.yml

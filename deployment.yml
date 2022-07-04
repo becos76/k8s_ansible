@@ -1,0 +1,45 @@
+#!/usr/bin/env ansible-playbook
+---
+- name: K8S DEPLOYMENT
+  hosts: all:!dhcp_hosts
+  gather_facts: yes
+  #any_errors_fatal: no
+  vars_files:
+    - .secrets/passwd.yml
+
+  tasks:
+  - name: "<======================== PRE-REQUISITES ===================>"
+    include_tasks: tasks/deploy/packages_general.yml
+    args:
+      apply:
+        become: yes
+  
+  - name: "<======================== TURN OFF SWAP ====================>"
+    include_tasks: tasks/deploy/swap.yml
+  
+  - name: "<======================== DOCKER CRI =======================>"
+    include_tasks: tasks/deploy/cri.yml
+    args:
+      apply:
+        become: yes
+  
+  - name: "<======================== KUBE PACKAGES ====================>"
+    include_tasks: tasks/deploy/packages_kube.yml
+    args:
+      apply:
+        become: yes
+
+  - name: "<======================= PREPARE THE CONTROL NODE ==========>"
+    block:
+      - name: "<======================== INIT CONTROL NODE ==========>"
+        include_tasks: tasks/deploy/boot_control.yml
+      
+      - name: "<======================== DEPLOY CNI =================>"
+        include_tasks: tasks/deploy/cni.yml
+    when: inventory_hostname in groups.control
+    
+  - name: "<===================== ADD WORKER NODES  ====================>"
+    include_tasks: tasks/deploy/workers.yml
+  
+
+    

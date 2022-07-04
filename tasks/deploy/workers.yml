@@ -1,0 +1,21 @@
+---
+- name: GET REGISTRATION TOKEN
+  shell: kubeadm token create --print-join-command
+  register: k8s_token
+  when: inventory_hostname in groups.control
+  run_once: yes
+  
+- name: REGISTER WORKERS
+  shell: "{{ k8s_token.stdout|trim }}"
+  register: k8s_workers
+  until: k8s_workers.stdout.find("This node has joined the cluster")
+  retries: 2
+  delay: 20
+  become: yes
+  when: inventory_hostname in groups.workers
+
+- name: LABEL WORKERS
+  shell: kubectl label nodes {{ item }} kubernetes.io/role=worker
+  loop: "{{ groups.workers }}"
+  when: inventory_hostname in groups.control
+  run_once: yes
