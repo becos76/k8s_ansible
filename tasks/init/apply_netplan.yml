@@ -6,9 +6,7 @@
   vars_files:
     - "{{inventory_dir}}/.secrets/passwd.yml"
 
-
   tasks:
-
   - name: GET NETPLAN FILENAME
     shell: ls /etc/netplan
     register: netplan_file
@@ -24,7 +22,6 @@
     become: yes
     async: 10
     poll: 0
-    #ignore_errors: true
   
   - name: CHECK CONNECTIVITY TO STATIC IPs
     wait_for:
@@ -36,4 +33,4 @@
     loop: "{{groups.control+groups.workers}}"
     connection: local
     run_once: yes
-    #delegate_to: localhost
+

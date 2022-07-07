@@ -3,7 +3,6 @@
 - name: K8S DEPLOYMENT
   hosts: all:!dhcp_hosts
   gather_facts: yes
-  #any_errors_fatal: no
   vars_files:
     - .secrets/passwd.yml
 
